@@ -177,6 +177,7 @@ describe('pool', () => {
     await sample(5.8, 6.8) // failures: 3, cooldown 6s (cooldown * failures)
     pool.fail(upstream)
     await sample(6.8, 7.8) // failures: 4, cooldown 7s (maxCooldown)
+    pool.debug()
     pool.succeed(upstream)
     await sample(0, 1)
 
@@ -190,13 +191,6 @@ describe('pool', () => {
       expect(duration > min && duration < max).toBeTruthy()
     }
   })
-
-  /*
-      minFailures: 3,
-      minCooldown: 1,
-      cooldown: 2,
-      maxCooldown: 5,
-      */
 })
 
 async function insertUpstreams(values: UpstreamInsert, n = 10) {
