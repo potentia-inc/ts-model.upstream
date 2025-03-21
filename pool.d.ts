@@ -16,5 +16,6 @@ export declare class Pool {
     sample(hint?: Hint): Promise<Upstream>;
     succeed(upstream: UpstreamOrId): void;
     fail(upstream: UpstreamOrId): void;
+    debug(): void;
 }
 export {};

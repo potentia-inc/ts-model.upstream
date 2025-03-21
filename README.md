@@ -73,4 +73,7 @@ pool.succeed(u)
 
 // Marks u as failed (increments the failure count).
 pool.fail(u)
+
+// Print the internal information for debugging
+pool.debug()
 ```
