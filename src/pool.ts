@@ -76,7 +76,7 @@ export class Pool {
     })()
 
     // wait awhile if necessary
-    const key = this.#key(upstream.id)
+    const key = this.#key(upstream)
     const cooldown = this.#cooldown(upstream) * 1000
     const duration = (this.#times.get(key) ?? 0) + cooldown - Date.now()
     if (duration > 0) await sleep(duration)
@@ -93,6 +93,26 @@ export class Pool {
     this.#failures.set(key, (this.#failures.get(key) ?? 0) + 1)
   }
 
+  debug() {
+    const now = new Date()
+    console.error(
+      now.toISOString(),
+      now.getTime(),
+      this.#type,
+      this.#options,
+      this.#expiresAt,
+    )
+    for (const x of this.#caches) {
+      const key = this.#key(x)
+      console.error(
+        key,
+        this.#failures.get(key) ?? 0,
+        this.#times.get(key) ?? 0,
+        this.#cooldown(x),
+      )
+    }
+  }
+
   async #sync() {
     const now = Date.now()
     if (this.#expiresAt > now) return
@@ -103,12 +123,12 @@ export class Pool {
     })
     const keys = new Set<string>()
     upstreams.forEach((x) => {
-      keys.add(this.#key(x.id))
+      keys.add(this.#key(x))
     })
 
     // remove upstreams
     for (const x of this.#caches) {
-      const key = this.#key(x.id)
+      const key = this.#key(x)
       if (!keys.has(key)) {
         this.#times.delete(key)
         this.#failures.delete(key)
@@ -123,7 +143,7 @@ export class Pool {
   }
 
   #cooldown(upstream: Upstream): number {
-    const key = this.#key(upstream.id)
+    const key = this.#key(upstream)
     const failures = this.#failures.get(key) ?? 0
     if (failures === 0 || failures < this.#options.minFailures) {
       return upstream.interval
