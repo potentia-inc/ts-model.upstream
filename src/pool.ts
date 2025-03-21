@@ -1,9 +1,13 @@
 import assert from 'node:assert'
+import { debug } from 'node:util'
 import { NoUpstreamError } from './error.js'
 import { pickId, pickIdOrNil } from './model.js'
 import { isNullish } from './type.js'
 import { Upstream, UpstreamOrId, Upstreams } from './upstream.js'
 import { sleep } from './util.js'
+
+const DEBUG = debug('potentia:model:upstream')
+const DEBUG_VERBOSE = debug('potentia:model:upstream:verbose')
 
 type Hint = {
   type: 'same' | 'diff'
@@ -81,15 +85,19 @@ export class Pool {
     const duration = (this.#times.get(key) ?? 0) + cooldown - Date.now()
     if (duration > 0) await sleep(duration)
     this.#times.set(key, Date.now())
+    DEBUG(`sample: ${candidates.length} ${key}`)
     return upstream
   }
 
   succeed(upstream: UpstreamOrId) {
-    this.#failures.set(this.#key(upstream), 0)
+    const key = this.#key(upstream)
+    DEBUG(`succeed:${key}`)
+    this.#failures.set(key, 0)
   }
 
   fail(upstream: UpstreamOrId) {
     const key = this.#key(upstream)
+    DEBUG(`fail:${key}`)
     this.#failures.set(key, (this.#failures.get(key) ?? 0) + 1)
   }
 
@@ -115,7 +123,10 @@ export class Pool {
 
   async #sync() {
     const now = Date.now()
-    if (this.#expiresAt > now) return
+    if (this.#expiresAt > now) {
+      DEBUG(`sync: ignored`)
+      return
+    }
 
     const upstreams = await this.#upstreams.findMany({
       type: this.#type,
@@ -136,6 +147,20 @@ export class Pool {
     }
     this.#caches.splice(0, this.#caches.length, ...upstreams)
     this.#expiresAt = now + this.#options.ttl * 1000
+    DEBUG(`sync: ${this.#caches.length} ${this.#expiresAt}`)
+    DEBUG_VERBOSE(
+      JSON.stringify(
+        this.#caches.map((x) => {
+          const key = this.#key(x)
+          return {
+            key,
+            weight: x.weight,
+            failures: this.#failures.get(key) ?? 0,
+            cooldown: this.#cooldown(x),
+          }
+        }),
+      ),
+    )
   }
 
   #key(upstream: UpstreamOrId): string {

@@ -35,6 +35,7 @@ services:
     depends_on: [init-mongo]
     environment:
       MONGO_URI: mongodb://mongo0,mongo1,mongo2/test?replicaSet=rs0
+      NODE_DEBUG: potentia:model:upstream,potentia:model:upstream:verbose
     restart: 'no'
     entrypoint: ['/bin/sh', '-c']
     command:
