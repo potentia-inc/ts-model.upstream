@@ -39,24 +39,24 @@ const pool = new Pool(upstreams, 'foobar', {
   // Default: 60 (syncs with the database every 60 seconds).
   ttl: 60,
 
-  // Cooldown is enabled when the failure count reaches or exceeds minFailures.
+  // Enables weight decay when the failure count reaches minFailures.
   // Default: 0.
   minFailures: 0,
 
-  // Cooldown time (in seconds) per failure. Default: 10.
-  cooldown: 10,
+  // Mimimum weight after decay. Default: 0.01.
+  minWeight: 0.1,
 
-  // Minimum cooldown time (in seconds). Default: 0.
-  minCooldown: 0,
-
-  // Maximum cooldown time (in seconds). Default: 86,400 (1 day).
-  maxCooldown: 86400,
+  // Decay factor applied to weight. Default: 0.8.
+  decay: 0.5,
 })
+
 /*
-The interval between consecutive requests is:
-  - upstream.interval if failure-count < minFailures
-  - Otherwise, max(upstream.interval, cooldown), where
-    cooldown = max(min(failure-count * cooldown, maxCooldown), minCooldown).
+Weight decay logic:
+  if success:
+    reset weight to its original value
+  if failure:
+    if failure count >= minFailures:
+      weight = weight * decay
 */
 
 // Select an upstream randomly, weighted by upstream.weight.
@@ -73,7 +73,4 @@ pool.succeed(u)
 
 // Marks u as failed (increments the failure count).
 pool.fail(u)
-
-// Print the internal information for debugging
-pool.debug()
 ```

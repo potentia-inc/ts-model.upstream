@@ -154,42 +154,38 @@ describe('pool', () => {
     await deleteUpstreams({ type })
   })
 
-  test('cooldown', async () => {
+  test('weight decay', async () => {
     const type = randStr()
     const pool = new Pool(UPSTREAMS, type, {
       ttl: 10,
-      minCooldown: 5,
-      maxCooldown: 7,
-      cooldown: 2,
       minFailures: 2,
+      decay: 0.5,
     })
-    await insertUpstreams({ type, host: randStr(), weight: 1 }, 1)
+    await insertUpstreams({ type, host: randStr(), weight: 1 }, 2)
 
-    let now = Date.now()
     const upstream = await pool.sample()
+    pool.fail(upstream) // failure: 1, weight: 1
+    pool.fail(upstream) // failure: 2, weight: 1 -> 0.5
+    pool.fail(upstream) // failure: 3, weight: 0.5 -> 0.25
+    pool.fail(upstream) // failure: 4, weight: 0.25 -> 0.125
+    pool.fail(upstream) // failure: 5, weight: 0.125 -> 0.0625
 
-    await sample(0, 1)
-    pool.fail(upstream)
-    await sample(0, 1) // failures: 1
-    pool.fail(upstream)
-    await sample(4.8, 5.8) // failures: 2, cooldown 5s (minCooldown)
-    pool.fail(upstream)
-    await sample(5.8, 6.8) // failures: 3, cooldown 6s (cooldown * failures)
-    pool.fail(upstream)
-    await sample(6.8, 7.8) // failures: 4, cooldown 7s (maxCooldown)
-    pool.debug()
-    pool.succeed(upstream)
-    await sample(0, 1)
-
-    await deleteUpstreams({ type })
-
-    async function sample(min: number, max: number) {
-      await pool.sample()
-      const tmp = Date.now()
-      const duration = (tmp - now) / 1000
-      now = tmp
-      expect(duration > min && duration < max).toBeTruthy()
+    let hit = 0
+    for (let i = 0; i < 100; ++i) {
+      const x = await pool.sample()
+      if (x.id.equals(upstream.id)) ++hit
     }
+
+    // hit rate ~ 0.0625 / (1 + 0.0625) ~ 5.88%
+    expect(hit >= 4 && hit <= 9).toBeTruthy()
+
+    pool.succeed(upstream) // reset to 1
+    hit = 0
+    for (let i = 0; i < 100; ++i) {
+      const x = await pool.sample()
+      if (x.id.equals(upstream.id)) ++hit
+    }
+    expect(hit >= 45 && hit <= 55).toBeTruthy() // hit rate ~ 50%
   })
 })
 
