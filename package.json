@@ -1,6 +1,6 @@
 {
   "name": "@potentia/model.upstream",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "description": "model.upstream",
   "main": "./index.js",
   "scripts": {
