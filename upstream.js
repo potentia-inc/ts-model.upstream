@@ -1,6 +1,7 @@
 import assert from 'node:assert';
-import { Model, Models, pickIdOrNil, unsetOrNil, UUID_DOC_SCHEMA, } from './model.js';
+import { Model, Models, UUID_DOC_SCHEMA, pickIdOrNil, toUnsetOrNil, } from './model.js';
 import { Nil, toUuid, isNullish } from './type.js';
+import { option } from './util.js';
 export const UPSTREAM_NAME = 'upstreams';
 export class Upstream extends Model {
     type;
@@ -76,6 +77,9 @@ export class Upstreams extends Models {
     $model(doc) {
         return new Upstream(doc);
     }
+    $sort(sort) {
+        return isNullish(sort) ? Nil : { ...option('created_at', sort.createdAt) };
+    }
     $query(query) {
         const { gtWeight, gteWeight } = query;
         return {
@@ -104,12 +108,12 @@ export class Upstreams extends Models {
     }
     $unset(values) {
         return {
-            path: unsetOrNil(values, 'path'),
-            headers: unsetOrNil(values, 'headers'),
-            searchs: unsetOrNil(values, 'searchs'),
-            auth: unsetOrNil(values, 'auth'),
-            interval: unsetOrNil(values, 'interval'),
-            weight: unsetOrNil(values, 'weight'),
+            path: toUnsetOrNil(values, 'path'),
+            headers: toUnsetOrNil(values, 'headers'),
+            searchs: toUnsetOrNil(values, 'searchs'),
+            auth: toUnsetOrNil(values, 'auth'),
+            interval: toUnsetOrNil(values, 'interval'),
+            weight: toUnsetOrNil(values, 'weight'),
         };
     }
 }

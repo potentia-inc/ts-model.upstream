@@ -116,9 +116,15 @@ export type UpstreamUpdate = {
     interval?: number;
     weight?: number;
 };
-export declare class Upstreams extends Models<UpstreamDoc, Upstream, UpstreamQuery, UpstreamInsert, UpstreamUpdate> {
+export type UpstreamSort = {
+    createdAt: 'asc' | 'desc';
+};
+export declare class Upstreams extends Models<UpstreamDoc, Upstream, UpstreamQuery, UpstreamInsert, UpstreamUpdate, UpstreamSort> {
     get name(): string;
     $model(doc: UpstreamDoc): Upstream;
+    $sort(sort?: UpstreamSort): {
+        [x: string]: NonNullable<"asc" | "desc">;
+    } | undefined;
     $query(query: UpstreamQuery): Filter<UpstreamDoc>;
     $insert(values: UpstreamInsert): InsertionOf<UpstreamDoc>;
     $set(values: UpstreamUpdate): UpdateFilter<UpstreamDoc>;
