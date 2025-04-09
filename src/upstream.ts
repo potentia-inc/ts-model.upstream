@@ -5,13 +5,14 @@ import {
   Model,
   ModelOrId,
   Models,
-  pickIdOrNil,
-  unsetOrNil,
+  UUID_DOC_SCHEMA,
   UpdateFilter,
   UuidDoc,
-  UUID_DOC_SCHEMA,
+  pickIdOrNil,
+  toUnsetOrNil,
 } from './model.js'
 import { Nil, TypeOrNil, toUuid, isNullish } from './type.js'
+import { option } from './util.js'
 
 export const UPSTREAM_NAME = 'upstreams'
 
@@ -136,12 +137,17 @@ export type UpstreamUpdate = {
   weight?: number
 }
 
+export type UpstreamSort = {
+  createdAt: 'asc' | 'desc'
+}
+
 export class Upstreams extends Models<
   UpstreamDoc,
   Upstream,
   UpstreamQuery,
   UpstreamInsert,
-  UpstreamUpdate
+  UpstreamUpdate,
+  UpstreamSort
 > {
   get name(): string {
     return UPSTREAM_NAME
@@ -149,6 +155,10 @@ export class Upstreams extends Models<
 
   $model(doc: UpstreamDoc): Upstream {
     return new Upstream(doc)
+  }
+
+  $sort(sort?: UpstreamSort) {
+    return isNullish(sort) ? Nil : { ...option('created_at', sort.createdAt) }
   }
 
   $query(query: UpstreamQuery): Filter<UpstreamDoc> {
@@ -185,12 +195,12 @@ export class Upstreams extends Models<
 
   $unset(values: UpstreamUpdate): UpdateFilter<UpstreamDoc> {
     return {
-      path: unsetOrNil(values, 'path'),
-      headers: unsetOrNil(values, 'headers'),
-      searchs: unsetOrNil(values, 'searchs'),
-      auth: unsetOrNil(values, 'auth'),
-      interval: unsetOrNil(values, 'interval'),
-      weight: unsetOrNil(values, 'weight'),
+      path: toUnsetOrNil(values, 'path'),
+      headers: toUnsetOrNil(values, 'headers'),
+      searchs: toUnsetOrNil(values, 'searchs'),
+      auth: toUnsetOrNil(values, 'auth'),
+      interval: toUnsetOrNil(values, 'interval'),
+      weight: toUnsetOrNil(values, 'weight'),
     }
   }
 }

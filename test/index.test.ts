@@ -59,6 +59,10 @@ describe('upstream', () => {
     expect(
       await UPSTREAMS.findOne({ type: upstream.type, gteWeight: 1 }),
     ).toBeUndefined()
+    expect(await UPSTREAMS.findMany()).toMatchObject([upstream])
+    expect(
+      await UPSTREAMS.findMany({}, { sort: { createdAt: 'asc' } }),
+    ).toMatchObject([upstream])
 
     // update
     const updated = await UPSTREAMS.updateOne(upstream, {
